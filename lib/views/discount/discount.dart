@@ -7,6 +7,7 @@ class DiscountManagementScreen extends StatelessWidget {
   DiscountManagementScreen({Key? key}) : super(key: key);
 
   final DiscountController discountController = Get.put(DiscountController());
+  // final AuthController authController = Get.put(AuthController());
 
   @override
   Widget build(BuildContext context) {
@@ -19,16 +20,31 @@ class DiscountManagementScreen extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         child: Obx(() {
           return ListView.builder(
-            itemCount: discountController.discounts.length,
+            itemCount: discountController.discounts?.length,
             itemBuilder: (context, index) {
               final discount = discountController.discounts[index];
               return DiscountCard(
-                discountName: discount['discount_name']!,
-                type: discount['type']!,
-                value: discount['value']!,
-                startDate: discount['startDate']!,
-                endDate: discount['endDate']!,
-                onSendNotification: () {
+                discountName: discount['discount_name'] ?? '',
+                type: discount['type'] ?? '',
+                value: discount['value'] ?? '',
+                startDate: discount['startDate'] ?? '',
+                endDate: discount['endDate'] ?? '',
+                code: discount['code'] ?? '',
+                onSendNotification: () async {
+                  print(discount);
+                  await discountController.sendDiscount(
+                      '66f2e0a2ec9715c777ef8167', // TODO: hardcode user id
+                      {
+                        'name': discount['discount_name']!,
+                        'type': discount['type']! == 'Percentage'
+                            ? 'percentage'
+                            : 'fixed_amount',
+                        'value': discount['value']!,
+                        'startDate': discount['startDate']!,
+                        'endDate': discount['endDate']!,
+                        'code': discount['code']!,
+                        'appliesTo': 'total_order'
+                      });
                   Get.snackbar(
                     "Notification Sent",
                     "Notification sent for ${discount['discount_name']}",
@@ -71,6 +87,7 @@ class DiscountManagementScreen extends StatelessWidget {
     final valueController = TextEditingController();
     final startDateController = TextEditingController();
     final endDateController = TextEditingController();
+    final codeController = TextEditingController();
     final formKey = GlobalKey<FormState>(); // Key for form validation
     String? selectedType;
 
@@ -175,6 +192,18 @@ class DiscountManagementScreen extends StatelessWidget {
                       return null;
                     },
                   ),
+                  TextFormField(
+                    controller: codeController,
+                    decoration:
+                        const InputDecoration(labelText: 'Discount Code'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Discount Code is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 10.h),
                 ],
               ),
             ),
@@ -195,6 +224,7 @@ class DiscountManagementScreen extends StatelessWidget {
                     'value': valueController.text,
                     'startDate': startDateController.text,
                     'endDate': endDateController.text,
+                    'code': codeController.text,
                   });
                   Get.back();
                   Get.snackbar(
@@ -222,6 +252,7 @@ class DiscountManagementScreen extends StatelessWidget {
     final startDateController =
         TextEditingController(text: discount['startDate']);
     final endDateController = TextEditingController(text: discount['endDate']);
+    final codeController = TextEditingController(text: discount['code']);
     final formKey = GlobalKey<FormState>(); // Key for form validation
     String? selectedType = discount['type'];
 
@@ -326,6 +357,18 @@ class DiscountManagementScreen extends StatelessWidget {
                       return null;
                     },
                   ),
+                  TextFormField(
+                    controller: codeController,
+                    decoration:
+                        const InputDecoration(labelText: 'Discount Code'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Discount Code is required';
+                      }
+                      return null;
+                    },
+                  ),
+                  SizedBox(height: 10.h),
                 ],
               ),
             ),
@@ -346,6 +389,7 @@ class DiscountManagementScreen extends StatelessWidget {
                     'value': valueController.text,
                     'startDate': startDateController.text,
                     'endDate': endDateController.text,
+                    'code': codeController.text,
                   });
                   Get.back();
                   Get.snackbar(
@@ -371,6 +415,7 @@ class DiscountCard extends StatelessWidget {
   final String type;
   final String value;
   final String startDate;
+  final String code;
   final String endDate;
   final VoidCallback onSendNotification;
   final VoidCallback onEdit;
@@ -383,6 +428,7 @@ class DiscountCard extends StatelessWidget {
     required this.value,
     required this.startDate,
     required this.endDate,
+    required this.code,
     required this.onSendNotification,
     required this.onEdit,
     required this.onDelete,
@@ -429,6 +475,11 @@ class DiscountCard extends StatelessWidget {
             ),
             Text(
               'End Date: $endDate',
+              style: TextStyle(fontSize: 14.sp, color: Colors.grey[700]),
+            ),
+            SizedBox(height: 8.h),
+            Text(
+              'Code: $code',
               style: TextStyle(fontSize: 14.sp, color: Colors.grey[700]),
             ),
             SizedBox(height: 12.h),
